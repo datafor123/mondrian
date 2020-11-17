@@ -37,7 +37,7 @@ public abstract class HierarchyBase
         boolean hasAll)
     {
         this.dimension = dimension;
-        this.hasAll = hasAll;
+        this.hasAll = true;//gcy effect hasAll always true
         this.visible = visible;
 
         assert subName != null;
