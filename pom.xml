@@ -312,7 +312,7 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>2.3.2</version>
         <executions>
-          <execution>
+          <!--<execution>
             <id>compile-jdk15</id>
             <goals>
               <goal>compile</goal>
@@ -347,11 +347,11 @@
                 <bootclasspath>${net.java.openjdk:rt-java6:jar}</bootclasspath>
               </compilerArguments>
             </configuration>
-          </execution>
+          </execution>-->
         </executions>
         <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
+          <source>1.7</source>
+          <target>1.7</target>
           <excludes>
             <exclude>**/FactoryJdbc3Impl.java</exclude>
             <exclude>**/FactoryJdbc4Impl.java</exclude>
