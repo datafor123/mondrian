@@ -1512,7 +1512,9 @@ public class BuiltinFunTable extends FunTableImpl {
                             final double v1 = calc1.evaluateDouble(evaluator);
                             // Null in numerator always returns DoubleNull.
                             //
-                            if (v0 == DoubleNull) {
+                            if(v0 == 0){
+                                return 0;
+                            }else if (v0 == DoubleNull) {
                                 return DoubleNull;
                             } else if (v1 == DoubleNull) {
                                 // Null only in denominator returns Infinity.
@@ -1531,7 +1533,9 @@ public class BuiltinFunTable extends FunTableImpl {
                             final double v1 = calc1.evaluateDouble(evaluator);
                             // Null in numerator or denominator returns
                             // DoubleNull.
-                            if (v0 == DoubleNull || v1 == DoubleNull) {
+                            if(v0 == 0){
+                                return 0;
+                            }else if (v0 == DoubleNull || v1 == DoubleNull) {
                                 return DoubleNull;
                             } else {
                                 return v0 / v1;
