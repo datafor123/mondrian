@@ -24,7 +24,7 @@ import org.olap4j.metadata.Measure;
  * @author jhyde
  * @since Dec 10, 2007
  */
-class MondrianOlap4jMeasure
+public class MondrianOlap4jMeasure
     extends MondrianOlap4jMember
     implements Measure
 {
@@ -69,6 +69,18 @@ class MondrianOlap4jMeasure
             }
         }
         return Datatype.STRING;
+    }
+    //gcy effect add
+    public String getFormatString(){
+        //System.out.println("expression:"+member.getExpression());;
+        //System.out.println("format76:"+member.getPropertyValue(Property.FORMAT_EXP));
+        Object o=member.getPropertyValue(Property.FORMAT_EXP);
+        if(o==null){
+            return null;
+        }
+        String f= o.toString();
+        f=f.replaceAll("\\\"", "");
+        return f;
     }
 }
 

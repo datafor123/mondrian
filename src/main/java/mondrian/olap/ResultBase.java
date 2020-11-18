@@ -12,11 +12,12 @@ package mondrian.olap;
 
 import mondrian.server.Execution;
 import mondrian.server.Statement;
-
 import org.apache.log4j.Logger;
 
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Skeleton implementation of {@link Result}.
@@ -140,7 +141,22 @@ public abstract class ResultBase implements Result {
         }
         return hierarchy.getDefaultMember();
     }
+    //gct effect start
+    private Map<String,Object> attributes=new HashMap<String,Object>();//gcy effect
 
+    public void setAttribute(String key,Object obj){
+        attributes.put(key, obj);
+    }
+    public Object getAttribute(String key){
+        return attributes.get(key);
+    }
+    public Map<String,Object> getAttributes(){
+        return attributes;
+    }
+    public void setAttributes(Map<String,Object> attributes){
+        this.attributes=attributes;
+    }
+    //gct effect end
     public void close() {
     }
 }

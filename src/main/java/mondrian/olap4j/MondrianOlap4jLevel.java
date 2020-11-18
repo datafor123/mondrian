@@ -33,7 +33,7 @@ import java.util.*;
  * @author jhyde
  * @since May 25, 2007
  */
-class MondrianOlap4jLevel
+public class MondrianOlap4jLevel
     extends MondrianOlap4jMetadataElement
     implements Level, Named
 {
@@ -93,7 +93,16 @@ class MondrianOlap4jLevel
     public Type getLevelType() {
         return level.getLevelType();
     }
-
+    //gcy effect add
+    public mondrian.olap.Property.Datatype getSchemaType() {
+        if(level==null){
+            return null;
+        }
+        if(level instanceof mondrian.rolap.RolapLevel){
+            return ((mondrian.rolap.RolapLevel)level).getAttribute()==null?null:((mondrian.rolap.RolapLevel)level).getAttribute().getType();
+        }
+        return null;
+    }
     public NamedList<Property> getProperties() {
         return getProperties(true);
     }

@@ -33,7 +33,7 @@ import mondrian.olap.Util;
  * @author jhyde
  * @since 10 August, 2001
  */
-interface CellReader {
+public interface CellReader {
     /**
      * Returns the value of the cell which has the context described by the
      * evaluator.
