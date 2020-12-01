@@ -207,7 +207,7 @@ public abstract class FunDefBase extends FunUtil implements FunDef {
      *
      * @param funDef Function definition to copy
      */
-    FunDefBase(FunDef funDef) {
+    public FunDefBase(FunDef funDef) {
         this(
             funDef.getName(), funDef.getSignature(),
             funDef.getDescription(), funDef.getSyntax(),

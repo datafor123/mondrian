@@ -259,7 +259,7 @@ public class FunUtil extends Util {
      * Returns the default hierarchy of a dimension, or null if there is no
      * default.
      *
-     * @see MondrianResource#CannotImplicitlyConvertDimensionToHierarchy
+     * @refer MondrianResource#CannotImplicitlyConvertDimensionToHierarchy
      *
      * @param dimension Dimension
      * @return Default hierarchy, or null
@@ -2170,7 +2170,7 @@ public class FunUtil extends Util {
         return sr.getLevelMembers(level, includeCalcMembers);
     }
 
-    static TupleList levelMembers(
+    public static TupleList levelMembers(
         final Level level,
         final Evaluator evaluator,
         final boolean includeCalcMembers)
@@ -3635,6 +3635,22 @@ public class FunUtil extends Util {
         public String toString() {
             return "<" + t + ", " + i + ">";
         }
+    }
+    public static List<Member> uniqueList(List<Member>members){
+        List<Member> list_unique=new ArrayList<Member>(0);
+        for(Member member:members){
+            boolean contain=true;
+            for(Member u:list_unique){
+                if(u.getUniqueName().equals(member.getUniqueName())){
+                    contain=false;
+                    break;
+                }
+            }
+            if(contain){
+                list_unique.add(member);
+            }
+        }
+        return list_unique;
     }
 }
 

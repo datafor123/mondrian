@@ -14,15 +14,21 @@ import mondrian.calc.*;
 import mondrian.calc.impl.*;
 import mondrian.mdx.ResolvedFunCall;
 import mondrian.olap.*;
-import mondrian.olap.fun.extra.CalculatedChildFunDef;
-import mondrian.olap.fun.extra.NthQuartileFunDef;
+import mondrian.olap.fun.extra.*;
 import mondrian.olap.fun.vba.Excel;
 import mondrian.olap.fun.vba.Vba;
 import mondrian.olap.type.LevelType;
+import mondrian.olap.type.MemberType;
+import mondrian.olap.type.SetType;
 import mondrian.olap.type.Type;
-
+import mondrian.rolap.RolapCubeHierarchy;
+import mondrian.rolap.RolapEvaluator;
+import mondrian.rolap.*;
 import java.io.PrintWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * <code>BuiltinFunTable</code> contains a list of all built-in MDX functions.
@@ -549,13 +555,302 @@ public class BuiltinFunTable extends FunTableImpl {
                 return new AbstractMemberCalc(call, new Calc[] {memberCalc}) {
                     public Member evaluateMember(Evaluator evaluator) {
                         Member member = memberCalc.evaluateMember(evaluator);
+                        if (member.isAll()) {
+                            return member;
+                        }
                         return evaluator.getSchemaReader().getLeadMember(
                             member, -1);
                     }
                 };
             }
         });
+        builder.define(
+                new FunDefBase(
+                        "createCalcMember",
+                        "Returns the previous member in the level that contains a specified member.",
+                        "fmmSn")
+                {
+                    public Calc compileCall(final ResolvedFunCall call, ExpCompiler compiler)
+                    {
+                        final MemberCalc calc0 = compiler.compileMember(call.getArg(0));
+                        final StringCalc calc1 = compiler.compileString(call.getArg(1));
+                        return new AbstractMemberCalc(call, new Calc[] {calc0,calc1}) {
+                            public Member evaluateMember(Evaluator evaluator) {
+                                Member parent=calc0.evaluateMember(evaluator);
+                                String name=calc1.evaluateString(evaluator);
+                                Hierarchy hierarchy=parent.getHierarchy();
+                                final List<Id.Segment> segmentList = new ArrayList<Id.Segment>();
+                                segmentList.addAll(
+                                        Util.parseIdentifier(parent.getUniqueName()));
+                                segmentList.add(new Id.NameSegment(name));
+                                Exp exp=call.getArg(2);
+                                Formula formula=new Formula(new Id(segmentList),exp,new MemberProperty[0]);
+                                Member calcMember=hierarchy.createMember(parent,parent.getLevel().getChildLevel(),name,formula);
+                                if(calcMember instanceof RolapMemberBase){
+                                    ((RolapMemberBase) calcMember).setOrderKey("");
+                                }
+                                return calcMember;
+                            }
+                        };
+                    }
+                });
+        builder.define(
+                new FunDefBase(
+                        "createCalcThisMember",
+                        "Returns the previous member in the level that contains a specified member.",
+                        "fmSn")
+                {
+                    public Calc compileCall(final ResolvedFunCall call, ExpCompiler compiler)
+                    {
+                        final StringCalc calc0 = compiler.compileString(call.getArg(0));
+                        return new AbstractMemberCalc(call, new Calc[] {calc0}) {
+                            public Member evaluateMember(Evaluator evaluator) {
+                                String uniqueName=calc0.evaluateString(evaluator);
+                                String parentName=uniqueName.substring(0,uniqueName.lastIndexOf(".["));
+                                Member current=parseMember(evaluator, uniqueName,null);
+                                if(current.isCalculated()){return current;}
+                                String name=uniqueName.substring(uniqueName.lastIndexOf(".[")+2,uniqueName.length()-1);
+                                name=name+"CALCSUFFIX";
+                                String newUniqueName=parentName+".["+name+"]";
+                                Member parent=current.getParentMember();
+                                //if(parent!=null&&parent.isAll()){parent=null;}
+                                Hierarchy hierarchy=current.getHierarchy();
+                                final List<Id.Segment> segmentList = new ArrayList<Id.Segment>();
+                                segmentList.addAll(
+                                        Util.parseIdentifier(newUniqueName));
+                                Exp exp=call.getArg(1);
+                                Formula formula=new Formula(new Id(segmentList),exp,new MemberProperty[0]);
+                                Member calcMember=hierarchy.createMember(parent,current.getLevel(),name,formula);
+                                ((mondrian.rolap.RolapCalculatedMember)calcMember).setLarder(((RolapMember)current).getLarder());
+                                ((mondrian.rolap.RolapCalculatedMember)calcMember).setOrderKey(current.getOrderKey());
+                                return calcMember;
+                            }
+                        };
+                    }
+                });
+        builder.define(
+                new FunDefBase(
+                        "FilterSet",
+                        "Returns the set that contains a specified member.",
+                        "fxxm")
+                {
+                    public Calc compileCall(final ResolvedFunCall call, ExpCompiler compiler)
+                    {
+                        final ListCalc calc0 =compiler.compileList(call.getArg(0));
+                        final MemberCalc calc1 = compiler.compileMember(call.getArg(1));
+                        return new AbstractListCalc(call, new Calc[] {calc0,calc1}) {
+                            public TupleList evaluateList(Evaluator evaluator) {
+                                TupleList list=calc0.evaluateList(evaluator);
+                                Member member=calc1.evaluateMember(evaluator);
+                                if(member.isCalculated()){member=parseMember(evaluator,member.getUniqueName().replaceAll("CALCSUFFIX",""),null);}
+                                if(member.isNull()){return list;}
+                                if(member.isAll()){return list;}
+                                int size=list.size();
+                                boolean hasSameHierarchy = false;
+                                if (size > 0) {
+                                    main:for(int i=0;i<size;i++){
+                                        List<Member> tuple = list.get(i);
+                                        int tupleSize = tuple.size();
+                                        sub:
+                                        for (int j = 0; j < tupleSize; j++) {
+                                            Member m = tuple.get(j);
+                                            if(m.getHierarchy().getUniqueName().equals(member.getHierarchy().getUniqueName())){
+                                                hasSameHierarchy = true;
+                                                break main;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (hasSameHierarchy) {
+                                    TupleList tupleListNew=TupleCollections.createList(0);
+                                    main:for (int i = 0; i < size; i++) {
+                                        List<Member> tuple = list.get(i);
+                                        int tupleSize = tuple.size();
+                                        boolean add=false;
+                                        List<Member> tupleNew=new ArrayList<Member>();
+                                        tupleNew.addAll(tuple);
+                                        sub:
+                                        for (int j = 0; j < tupleSize; j++) {
+                                            Member m = tuple.get(j);
+                                            if(m.getHierarchy().getUniqueName().equals(member.getHierarchy().getUniqueName())){
+                                                if(m.getUniqueName().equals(member.getUniqueName())){
+                                                    add=true;break sub;
+                                                }
+                                                else if(m.isAll()||member.getUniqueName().startsWith(m.getUniqueName())){
+                                                    tupleNew.set(j,member);
+                                                    if(!tupleListNew.contains(tupleNew)){
+                                                        tupleListNew.add(tupleNew);
+                                                    }
+                                                    break sub;
+                                                }else if(member.isAll()||m.getUniqueName().startsWith(member.getUniqueName())){
+                                                    if(!tupleListNew.contains(tupleNew)){
+                                                        tupleListNew.add(tupleNew);
+                                                    }
+                                                    break sub;
+                                                }else{
 
+                                                }
+                                            }
+                                        }
+                                        if(add){
+                                            tupleListNew.add(tupleNew);
+                                        }
+                                    }
+                                    return tupleListNew;
+                                } else {
+                                    return list;
+                                }
+
+                            }
+                        };
+                    }
+                });
+        builder.define(
+                new FunDefBase(
+                        "SetOnLevel",
+                        "Returns the previous member in the level that contains a specified member.",
+                        "fxxl")
+                {
+                    public Type getResultType(Validator validator, Exp[] args) {
+                        final Type argType = args[1].getType();
+                        return new SetType(new MemberType(argType.getDimension(),
+                                argType.getHierarchy(), argType.getLevel(), null));
+                    }
+                    public Calc compileCall(final ResolvedFunCall call, ExpCompiler compiler)
+                    {
+                        final ListCalc calc0 =compiler.compileList(call.getArg(0));
+                        final LevelCalc calc1 = compiler.compileLevel(call.getArg(1));
+                        return new AbstractListCalc(call, new Calc[] {calc0,calc1}) {
+                            public TupleList evaluateList(Evaluator evaluator) {
+                                TupleList list=calc0.evaluateList(evaluator);
+                                Level level=calc1.evaluateLevel(evaluator);
+                                int size=list.size();
+                                boolean hasSameHierarchy = false;
+                                int sameHierIndex=-1;
+                                if (size == 0) {
+                                    return TupleCollections.createList(1);
+                                }else{
+                                    main: for (int i = 0; i < 1; i++) {
+                                        List<Member> tuple = list.get(i);
+                                        int tupleSize = tuple.size();
+                                        sub: for (int j = 0; j < tupleSize; j++) {
+                                            Member m = tuple.get(j);
+                                            if (m.getHierarchy()
+                                                    .getUniqueName()
+                                                    .equals(level.getHierarchy()
+                                                            .getUniqueName())) {
+                                                hasSameHierarchy = true;
+                                                sameHierIndex=j;
+                                                break main;
+                                            }
+                                        }
+                                    }
+                                }
+                                if (hasSameHierarchy) {
+                                    TupleList tupleListNew=TupleCollections.createList(0);
+                                    List<Member> levelMembers=new ArrayList<Member>();
+                                    main:for (int i = 0; i < size; i++) {
+                                        List<Member> tuple = list.get(i);
+                                        //int tupleSize = tuple.size();
+                                        //sub:for (int j = 0; j < tupleSize; j++)
+                                        {
+                                            int j=sameHierIndex;
+                                            Member m = tuple.get(j);
+                                            if(m.getHierarchy().getUniqueName().equals(level.getHierarchy().getUniqueName())){
+                                                int depthMinus=m.getDepth()-level.getDepth();
+                                                Member levelMember=m;
+                                                if(depthMinus==0){
+                                                    levelMembers.add(levelMember);
+                                                }else if(depthMinus>0){
+                                                    int pInt=0;
+                                                    levelMember=m;
+                                                    while(pInt++<depthMinus) {
+                                                        levelMember=levelMember.getParentMember();
+                                                    }
+                                                    levelMembers.add(levelMember);
+                                                }else{
+                                                    int pInt=0;
+                                                    List<Member> children = evaluator.getSchemaReader()
+                                                            .getMemberChildren(m);
+                                                    while(++pInt<-depthMinus) {
+                                                        List<Member> curList=new ArrayList<Member>();
+                                                        for(Member child:children){
+                                                            curList.addAll(evaluator.getSchemaReader()
+                                                                    .getMemberChildren(child));
+                                                        }
+                                                        children=curList;
+                                                    }
+                                                    levelMembers.addAll(children);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    List<Member> tuple=FunUtil.uniqueList(levelMembers);
+                                    return new UnaryTupleList(tuple);
+                                } else {
+                                    return levelMembers(level, evaluator, true);
+                                }
+
+                            }
+                        };
+                    }
+                });
+        // "<Hierarchy>.CurrentCalcMember"
+        builder.define(
+                new FunDefBase(
+                        "CurrentCalcMember",
+                        "Returns the default member of a hierarchy.",
+                        "pmh")
+                {
+                    public Calc compileCall(ResolvedFunCall call, ExpCompiler compiler)
+                    {
+                        final HierarchyCalc hierarchyCalc =
+                                compiler.compileHierarchy(call.getArg(0));
+                        return new AbstractMemberCalc(
+                                call, new Calc[] {hierarchyCalc})
+                        {
+                            public Member evaluateMember(Evaluator evaluator) {
+                                Hierarchy hierarchy =
+                                        hierarchyCalc.evaluateHierarchy(evaluator);
+                                Member member=evaluator.getContext(hierarchy);
+                                Member c=((RolapEvaluator)evaluator).getExpanding();
+                                if(c!=null){
+                                    if(hierarchy.equals(c.getHierarchy()))
+                                        return c;
+                                }
+                                return member;
+                            }
+                        };
+                    }
+                });
+        builder.define(
+                new FunDefBase(
+                        "NormalMember",
+                        "Returns the default member of a hierarchy.",
+                        "pmm")
+                {
+                    public Calc compileCall(ResolvedFunCall call, ExpCompiler compiler)
+                    {
+                        final MemberCalc memberCalc =
+                                compiler.compileMember(call.getArg(0));
+                        return new AbstractMemberCalc(
+                                call, new Calc[] {memberCalc})
+                        {
+                            public Member evaluateMember(Evaluator evaluator) {
+                                Member member=memberCalc.evaluateMember(evaluator);
+                                if(member.isCalculated()){
+                                    if(member.getUniqueName().contains("CALCSUFFIX")||member.getUniqueName().contains("[合计]")){
+                                        member=parseMember(evaluator,member.getUniqueName().replaceAll("CALCSUFFIX","").replaceAll("\\.\\[合计\\]",""),null);
+                                    }else{
+                                        member=member.getParentMember();
+                                        while(member.isCalculated()){member=member.getParentMember();}
+                                    }
+                                }
+                                return member;
+                            }
+                        };
+                    }
+                });
         builder.define(StrToMemberFunDef.INSTANCE);
         builder.define(ValidMeasureFunDef.instance);
 
@@ -1005,7 +1300,22 @@ public class BuiltinFunTable extends FunTableImpl {
                 };
             }
         });
-
+        builder.define(
+                new FunDefBase(
+                        "AllMembers",
+                        "All Hierarchy tuple set",
+                        "fxx")
+                {
+                    public Calc compileCall(ResolvedFunCall call, ExpCompiler compiler)
+                    {
+                        return new AbstractListCalc(call, new Calc[0]) {
+                            public TupleList evaluateList(Evaluator evaluator)
+                            {
+                                return ((RolapEvaluator)evaluator).getAllHierarchy();
+                            }
+                        };
+                    }
+                });
         builder.define(XtdFunDef.MtdResolver);
         builder.define(OrderFunDef.Resolver);
         builder.define(UnorderFunDef.Resolver);
@@ -2024,7 +2334,9 @@ public class BuiltinFunTable extends FunTableImpl {
         builder.define(NthQuartileFunDef.ThirdQResolver);
 
         builder.define(CalculatedChildFunDef.instance);
-
+        builder.define(DateToMemberFunDef.Resolver);//gcy effect
+        builder.define(CachedExistsFunDef.instance);//gcy effect
+        builder.define(CachedExistsByKeyFunDef.instance);//gcy effect
         builder.define(CastFunDef.Resolver);
 
         // UCase(<String Expression>)
