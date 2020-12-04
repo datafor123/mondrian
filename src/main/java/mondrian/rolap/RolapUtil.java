@@ -178,8 +178,9 @@ public class RolapUtil {
             } catch (ClassCastException cce) {
                 if (o2 == RolapUtilComparable.INSTANCE) {
                     return 1;
+                }else{
+                    return o1.toString().compareTo(o2.toString());
                 }
-                throw new MondrianException(cce);
             }
         }
     }
