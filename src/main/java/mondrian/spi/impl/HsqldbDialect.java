@@ -41,6 +41,7 @@ public class HsqldbDialect extends JdbcDialectImpl {
         String value,
         Date date)
     {
+        buf.append("DATE ");
         // Hsqldb accepts '2008-01-23' but not SQL:2003 format.
         Util.singleQuoteString(value, buf);
     }
