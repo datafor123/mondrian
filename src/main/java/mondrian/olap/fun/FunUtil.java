@@ -1883,7 +1883,7 @@ public class FunUtil extends Util {
      */
     public static int compareSiblingMembers(Member m1, Member m2) {
         // calculated members collate after non-calculated
-        final boolean calculated1 = m1.isCalculatedInQuery();
+        /*final boolean calculated1 = m1.isCalculatedInQuery();
         final boolean calculated2 = m2.isCalculatedInQuery();
         if (calculated1) {
             if (!calculated2) {
@@ -1893,7 +1893,7 @@ public class FunUtil extends Util {
             if (calculated2) {
                 return -1;
             }
-        }
+        }*/
         final Comparable k1 = m1.getOrderKey();
         final Comparable k2 = m2.getOrderKey();
         if (k1 instanceof String && k2 instanceof String) {
