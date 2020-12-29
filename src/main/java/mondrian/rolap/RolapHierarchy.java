@@ -637,6 +637,7 @@ public class RolapHierarchy extends HierarchyBase {
             Collections.<RolapSchema.PhysColumn>emptyList(),
             null,
             org.olap4j.metadata.Level.Type.ALL,
+                null,//gcy add
             ALL_LEVEL_CARDINALITY);
 
     private static final RolapSharedAttribute NULL_ATTRIBUTE =
@@ -649,6 +650,7 @@ public class RolapHierarchy extends HierarchyBase {
             Collections.<RolapSchema.PhysColumn>emptyList(),
             null,
             org.olap4j.metadata.Level.Type.NULL,
+                null,//gcy add
             NULL_LEVEL_CARDINALITY);
 
     private static final RolapSharedAttribute MEASURES_ATTRIBUTE =
@@ -661,6 +663,7 @@ public class RolapHierarchy extends HierarchyBase {
             Collections.<RolapSchema.PhysColumn>emptyList(),
             null,
             org.olap4j.metadata.Level.Type.REGULAR,
+                null,//gcy add
             Integer.MIN_VALUE);
 }
 

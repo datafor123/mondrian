@@ -3507,7 +3507,9 @@ public class RolapSchemaLoader {
             final org.olap4j.metadata.Level.Type levelType =
                 stringToLevelType(
                     xmlAttribute.levelType);
-
+        //gcy add start
+        final mondrian.olap.Property.Datatype type=stringToType(
+                xmlAttribute.datatype);
         // Here we figure out a proper caption for the attribute. That is, if
         // none was supplied in the schema.
         final String caption;
@@ -3539,6 +3541,7 @@ public class RolapSchemaLoader {
                 orderByList,
                 makeMemberFormatter(xmlAttribute),
                 levelType,
+                type,//gcy add
                 approxRowCount,
                 createLarder(
                     Util.makeFqName(dimension, xmlAttribute.name)
@@ -3603,7 +3606,19 @@ public class RolapSchemaLoader {
             org.olap4j.metadata.Level.Type.class,
             levelTypeString.toUpperCase());
     }
+    //gcy add
+    private mondrian.olap.Property.Datatype stringToType(
+            String typeString)
+    {
+        if(typeString==null){
+            typeString="";
+        }
+        typeString = "TYPE_"+Util.camelToUpper(typeString);
 
+        return Util.lookup(
+                mondrian.olap.Property.Datatype.class,
+                typeString.toUpperCase());
+    }
     public Handler getHandler() {
         return handler;
     }

@@ -38,11 +38,12 @@ public class RolapSharedAttribute extends RolapAttributeImpl {
         List<RolapSchema.PhysColumn> orderByList,
         MemberFormatter memberFormatter,
         Level.Type levelType,
+        mondrian.olap.Property.Datatype type,//gcy add
         int approxRowCount)
     {
         super(
             name, visible, keyList, nameExp, captionExp, orderByList,
-            memberFormatter, levelType, approxRowCount, Larders.EMPTY);
+            memberFormatter, levelType, type, approxRowCount, Larders.EMPTY);
     }
 
     /**

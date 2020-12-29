@@ -14,6 +14,8 @@ package mondrian.rolap;
 
 import mondrian.calc.Calc;
 import mondrian.calc.ParameterSlot;
+import mondrian.calc.TupleList;
+import mondrian.calc.TupleCollections;
 import mondrian.olap.*;
 import mondrian.olap.fun.FunUtil;
 import mondrian.server.Statement;
@@ -98,6 +100,27 @@ public class RolapEvaluator implements Evaluator {
     private int commandCount;
     private Object[] commands;
 
+    private RolapCalculation maxSolveMember=null;
+
+    //gct effect page start
+    private int flattened=0;
+    private Map<String,Object> attributes=new HashMap<String,Object>();//gcy effect
+
+    public void setAttribute(String key,Object obj){
+        attributes.put(key, obj);
+    }
+    public Object getAttribute(String key){
+        return attributes.get(key);
+    }
+    public Map<String,Object> getAttributes(){
+        return attributes;
+    }
+    private TupleList allHierarchy;
+
+    public TupleList getAllHierarchy() {
+        return allHierarchy;
+    }
+    //gct effect end
     /**
      * Set of expressions actively being expanded. Prevents infinite cycle of
      * expansions.
@@ -173,6 +196,7 @@ public class RolapEvaluator implements Evaluator {
         this.aggregationLists = aggregationLists;
 
         expandingMember = parent.expandingMember;
+        allHierarchy=parent.allHierarchy;
     }
 
     /**
@@ -192,6 +216,7 @@ public class RolapEvaluator implements Evaluator {
         evalAxes = false;
         cellReader = null;
         currentMembers = root.defaultMembers.clone();
+        allHierarchy=transToTuple(root.defaultMembers);//gcy effect,as default has forced to be all
         calculations = new RolapCalculation[currentMembers.length];
         calculationCount = 0;
         slicerMembers = new ArrayList<RolapMember>();
@@ -209,7 +234,21 @@ public class RolapEvaluator implements Evaluator {
 
         // we expect client to set CellReader
     }
-
+    //gcy effect
+    private TupleList transToTuple(RolapMember[] members) {
+        if (members == null) {
+            return null;
+        } else {
+            List<Member> res = new ArrayList<Member>();
+            int size = members.length;
+            for (int i = 0; i < size; i++) {
+                res.add(members[i]);
+            }
+            TupleList tupleList=TupleCollections.createList(0);
+            tupleList.add(res);
+            return tupleList;
+        }
+    }
     /**
      * Creates an evaluator.
      */
@@ -331,12 +370,25 @@ public class RolapEvaluator implements Evaluator {
     }
 
     public final RolapMember[] getNonAllMembers() {
-        if (nonAllMembers == null) {
+        //gcy effect
+        if (nonAllMembers == null||nonAllMembers.length==0) {
+            int loop=currentMembers.length;
+            int size=currentMembers.length;
+            List<RolapMember> members = new ArrayList<RolapMember>(0);
             nonAllMembers = new RolapMember[root.nonAllPositionCount];
-            for (int i = 0; i < root.nonAllPositionCount; i++) {
-                int nonAllPosition = root.nonAllPositions[i];
-                nonAllMembers[i] = currentMembers[nonAllPosition];
+            for (int i = 0; i < loop; i++) {
+                if(currentMembers[i].isAll()&&!(currentMembers[i] instanceof RolapResult.CompoundSlicerRolapMember)){
+                    if(currentMembers[i].getHierarchy().getDimension().isMeasures()){
+                        members.add(currentMembers[i].getHierarchy().getDefaultMember());
+                    }else{
+                        size--;
+                    }
+                }else{
+                    members.add(currentMembers[i]);
+                }
             }
+            nonAllMembers = new RolapMember[members.size()];
+            nonAllMembers=members.toArray(nonAllMembers);
         }
         return nonAllMembers;
     }
@@ -681,6 +733,10 @@ public class RolapEvaluator implements Evaluator {
     public final RolapMember getContext(RolapCubeHierarchy hierarchy) {
         return currentMembers[hierarchy.getOrdinalInCube()];
     }
+    //gcy effect
+    public final RolapMember getContext(int ordinal) {
+        return currentMembers[ordinal];
+    }
 
     public final Object evaluateCurrent() {
         // Get the member in the current context which is (a) calculated, and
@@ -756,7 +812,7 @@ public class RolapEvaluator implements Evaluator {
      *
      * @return Calculated member currently being expanded
      */
-    Member getExpanding() {
+    public Member getExpanding() {
         return expandingMember;
     }
 
@@ -1039,6 +1095,10 @@ public class RolapEvaluator implements Evaluator {
         boolean create)
     {
         return root.evaluateNamedSet(namedSet, create);
+    }
+
+    public CellReader getCellReader() {
+        return cellReader;
     }
 
     public final int getMissCount() {
@@ -1374,6 +1434,30 @@ public class RolapEvaluator implements Evaluator {
 
         abstract void execute(RolapEvaluator evaluator);
     }
+    //gcy effect start
+    public RolapCalculation getMaxCalcMember() {
+        RolapCalculation maxSolveMember = calculations[0];
+        for (int i = 0; i < calculationCount; i++) {
+            if(maxSolveMember instanceof  mondrian.rolap.RolapResult.CompoundSlicerRolapMember){
+                break;
+            }
+            maxSolveMember = calculations[i];
+        }
+        return maxSolveMember;
+    }
+    public RolapCalculation getMaxSolveMember() {
+        return maxSolveMember;
+    }
+    public void setMaxSolveMember(RolapCalculation maxSolveMember) {
+        this.maxSolveMember = maxSolveMember;
+    }
+    public int getFlattened() {
+        return flattened;
+    }
+    public void setFlattened(int flattened) {
+        this.flattened = flattened;
+    }
+    //gcy effect across end
 }
 
 // End RolapEvaluator.java

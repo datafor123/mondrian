@@ -239,7 +239,12 @@ public interface Evaluator {
     void setContext(Member[] members, boolean safe);
 
     Member getContext(Hierarchy hierarchy);
-
+    //gcy effect start
+    Member getContext(int ordinal);
+    void setAttribute(String key,Object obj);
+    Object getAttribute(String key);
+    Map<String,Object> getAttributes();
+    //gcy effect end
     /**
      * Calculates and returns the value of the cell at the current context.
      */

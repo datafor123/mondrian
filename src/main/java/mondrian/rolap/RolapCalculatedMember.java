@@ -89,7 +89,7 @@ public class RolapCalculatedMember
         return formula;
     }
 
-    void setLarder(Larder larder) {
+    public void setLarder(Larder larder) {
         assert larder != null;
         this.larder = larder;
     }

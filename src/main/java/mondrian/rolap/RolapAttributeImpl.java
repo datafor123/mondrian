@@ -49,6 +49,8 @@ public abstract class RolapAttributeImpl
         new ArrayList<RolapProperty>();
 
     final Level.Type levelType;
+    //gcy add
+    final mondrian.olap.Property.Datatype type;
     private final int approxRowCount;
 
     final MemberFormatter memberFormatter;
@@ -83,6 +85,7 @@ public abstract class RolapAttributeImpl
         List<RolapSchema.PhysColumn> orderByList,
         MemberFormatter memberFormatter,
         Level.Type levelType,
+        mondrian.olap.Property.Datatype type,//gcy add
         int approxRowCount,
         Larder larder)
     {
@@ -106,6 +109,7 @@ public abstract class RolapAttributeImpl
         this.captionExp = captionExp;
         this.memberFormatter = memberFormatter;
         this.levelType = levelType;
+        this.type = type;//gcy add
         this.approxRowCount = approxRowCount;
         this.orderByList = orderByList;
 
@@ -187,7 +191,7 @@ public abstract class RolapAttributeImpl
     }
 
     public Property.Datatype getType() {
-        throw new UnsupportedOperationException();
+        return type;
     }
 
     public Dialect.Datatype getDatatype() {

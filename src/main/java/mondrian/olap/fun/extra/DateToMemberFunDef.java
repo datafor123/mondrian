@@ -147,19 +147,7 @@ public class DateToMemberFunDef extends FunDefBase {
                         	levelDateFormat="[yyyy-MM-dd HH:mm:ss.S]";
                         	levelDateFormatStandard="yyyyMMddHHmmssS";
                         }
-                        Annotation levelDateAnnotation=level.getAnnotationMap().get("AnalyzerDateFormat");
-                        if(levelDateAnnotation==null){
-                        	System.err.println("ERROR:"+level.getUniqueName()+"'s AnalyzerDateFormat Undefined");
-                        	throw new RuntimeException("ERROR:"+level.getUniqueName()+"'s AnalyzerDateFormat Undefined");
-                        	//return level.getHierarchy().getNullMember();
-                        }
-                        Object levelDateValue=levelDateAnnotation.getValue();                        
-                        if(levelDateValue==null){
-                        	System.err.println("ERROR:"+level.getUniqueName()+"'s AnalyzerDateFormat Undefined");
-                        	throw new RuntimeException("ERROR:"+level.getUniqueName()+"'s AnalyzerDateFormat Undefined");
-                        	//return level.getHierarchy().getNullMember();
-                        }
-                        levelDateFormat=levelDateValue.toString();
+						levelDateFormat=getDateFormatFromParent(level);
                         if(type.equals(org.olap4j.metadata.Level.Type.TIME_YEARS)){
                         	levelDateFormatStandard="yyyy";
                         }else if(type.equals(org.olap4j.metadata.Level.Type.TIME_HALF_YEAR)){
@@ -292,6 +280,34 @@ public class DateToMemberFunDef extends FunDefBase {
     	}
     	return result;
     }
+	private String getDateFormat(Level level){
+		Annotation levelDateAnnotation=level.getAnnotationMap().get("AnalyzerDateFormat");
+		if(levelDateAnnotation==null){
+			System.err.println("ERROR:"+level.getUniqueName()+"'s AnalyzerDateFormat Undefined");
+			throw new RuntimeException("ERROR:"+level.getUniqueName()+"'s AnalyzerDateFormat Undefined");
+			//return level.getHierarchy().getNullMember();
+		}
+		Object levelDateValue=levelDateAnnotation.getValue();
+		if(levelDateValue==null){
+			System.err.println("ERROR:"+level.getUniqueName()+"'s AnalyzerDateFormat Undefined");
+			throw new RuntimeException("ERROR:"+level.getUniqueName()+"'s AnalyzerDateFormat Undefined");
+			//return level.getHierarchy().getNullMember();
+		}
+
+		return levelDateValue.toString();
+	}
+	private String getDateFormatFromParent(Level level){
+		String levelName=getDateFormat(level);
+		if(levelName.contains("].[")){//兼容填写完整版本
+			return levelName;
+		}else{//从父级追加
+			while(level.getParentLevel()!=null&&!level.getParentLevel().isAll()){
+				level=level.getParentLevel();
+				levelName=getDateFormat(level)+"."+levelName;
+			}
+			return levelName;
+		}
+	}
 }
 
 // End DateToMemberFunDef.java

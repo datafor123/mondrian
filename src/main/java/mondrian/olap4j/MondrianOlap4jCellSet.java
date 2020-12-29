@@ -37,7 +37,7 @@ import java.util.*;
  * @author jhyde
  * @since May 24, 2007
  */
-abstract class MondrianOlap4jCellSet
+public abstract class MondrianOlap4jCellSet
     extends Execution
     implements CellSet
 {
@@ -879,6 +879,10 @@ abstract class MondrianOlap4jCellSet
 
     public boolean isWrapperFor(Class<?> iface) throws SQLException {
         throw new UnsupportedOperationException();
+    }
+    //gcy effect page add
+    public Result getResult() {
+        return result;
     }
 }
 
