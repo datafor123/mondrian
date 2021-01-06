@@ -290,7 +290,7 @@ public class SqlTupleReader implements TupleReader {
                                 nameValue =
                                     nameObject == null
                                         ? RolapUtil.mdxNullLiteral()
-                                        : String.valueOf(nameObject);
+                                        : RolapMemberBase.keyToString(nameObject);
                             } else {
                                 nameObject = null;
                                 nameValue = null;

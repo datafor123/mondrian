@@ -376,7 +376,7 @@ public class SqlMemberSource
                             nameValue =
                                 nameObject == null
                                     ? null
-                                    : String.valueOf(nameObject);
+                                    : RolapMemberBase.keyToString(nameObject);
                         } else {
                             nameObject = null;
                             nameValue = null;
@@ -385,7 +385,7 @@ public class SqlMemberSource
                             new Larders.LarderBuilder();
                         builder.add(Property.NAME, nameValue);
                         if (captionValue != null) {
-                            String caption = captionValue.toString();
+                            String caption = RolapMemberBase.keyToString(captionValue);
                             if (!caption.equals(nameValue)) {
                                 builder.caption(caption);
                             }
@@ -1142,7 +1142,7 @@ public class SqlMemberSource
                         nameValue =
                             nameObject == null
                                 ? RolapUtil.mdxNullLiteral()
-                                : String.valueOf(nameObject);
+                                : RolapMemberBase.keyToString(nameObject);
                     } else {
                         nameObject = null;
                         nameValue = null;
@@ -1195,7 +1195,7 @@ public class SqlMemberSource
         builder.add(Property.NAME, nameValue);
 
         if (captionValue != null) {
-            final String caption = captionValue.toString();
+            final String caption = RolapMemberBase.keyToString(captionValue);
             if (!caption.equals(nameValue)) {
                 builder.caption(caption);
             }
@@ -1238,7 +1238,7 @@ public class SqlMemberSource
                 Property.NAME,
                 name == null
                     ? RolapUtil.sqlNullValue.toString()
-                    : name.toString());
+                    : RolapMemberBase.keyToString(name));
         }
         int j = 0;
         for (RolapProperty property

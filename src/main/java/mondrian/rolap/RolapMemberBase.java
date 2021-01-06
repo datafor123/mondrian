@@ -149,7 +149,7 @@ public class RolapMemberBase
         this.key = key;
         this.ordinal = -1;
         this.larder = larder;
-        this.uniqueName = uniqueName;
+        this.uniqueName = computeUniqueName(key);//gcy effect
     }
 
     public String getQualifiedName() {
@@ -436,7 +436,7 @@ public class RolapMemberBase
             || (parentMember.isAll()
             && (!isCalculated()
             || this instanceof VisualTotalsFunDef.VisualTotalMember
-            || getDataMember() != null)))
+            || getDataMember() != null|| key.toString().endsWith("CALCSUFFIX"))))//gcy effect
         {
             final RolapCubeLevel level = getLevel();
             final RolapCubeHierarchy hierarchy = level.cubeHierarchy;
@@ -1216,7 +1216,11 @@ public class RolapMemberBase
             return RolapUtil.mdxNullLiteral();
         } else if (key instanceof List) {
             List list = (List) key;
-            return keyToString(list.get(list.size() - 1));
+            if(list.size()>0) {
+                return keyToString(list.get(list.size() - 1));
+            }else{
+                return key.toString();
+            }
         } else if (key instanceof Id.NameSegment) {
             return ((Id.NameSegment) key).name;
         } else if (key instanceof Number) {
