@@ -207,7 +207,7 @@ public class SqlQueryBuilder {
                 return null;
             } else {
                 path = fact.dimensionMap3.get(dimension);
-                if (path.getLinks().isEmpty()) {
+                if (path==null||path.getLinks().isEmpty()) {//gcy effect
                     assert physRelation == fact.getFactRelation();
                     return null; // degenerate dimension
                 }
