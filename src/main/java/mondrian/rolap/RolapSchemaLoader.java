@@ -1679,7 +1679,7 @@ public class RolapSchemaLoader {
                     measure.setOrdinal(nonSystemMeasures().size());
                     measure.setOrderKey(nonSystemMeasures().size());
                 }
-                if (measure.getAggregator() == RolapAggregator.Count) {
+                if ("Fact Count".equals(measure.getName())) {//gcy effect
                     measureGroup.factCountMeasure = measure;
                 }
                 if (measure.getExpr() != null) {
@@ -1822,7 +1822,8 @@ public class RolapSchemaLoader {
         // that are created for measure groups do not count; they are not
         // visible.
 
-        cube.init(nonSystemMeasures());
+        //cube.init(nonSystemMeasures());
+        cube.init(measureList);//gcy effect allow use Fact Count
 
         final List<AssignDefaultMember> assignDefaultMembers2 =
             new ArrayList<AssignDefaultMember>(assignDefaultMembers);
