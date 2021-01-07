@@ -149,7 +149,7 @@ public class RolapMemberBase
         this.key = key;
         this.ordinal = -1;
         this.larder = larder;
-        this.uniqueName = computeUniqueName(key);//gcy effect
+        this.uniqueName = uniqueName;
     }
 
     public String getQualifiedName() {
