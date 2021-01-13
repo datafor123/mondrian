@@ -1713,7 +1713,7 @@ public class RolapSchemaLoader {
                     throw new AssertionError();
                 }
                 measureList.add(measureGroup.factCountMeasure);
-                aggFactCountMeasureList.add(measureGroup.factCountMeasure);
+                //aggFactCountMeasureList.add(measureGroup.factCountMeasure);
             }
 
             final Set<RolapCubeDimension> unlinkedDimensions =
@@ -1822,8 +1822,7 @@ public class RolapSchemaLoader {
         // that are created for measure groups do not count; they are not
         // visible.
 
-        //cube.init(nonSystemMeasures());
-        cube.init(measureList);//gcy effect allow use Fact Count
+        cube.init(nonSystemMeasures());
 
         final List<AssignDefaultMember> assignDefaultMembers2 =
             new ArrayList<AssignDefaultMember>(assignDefaultMembers);
@@ -1926,7 +1925,7 @@ public class RolapSchemaLoader {
             cube,
             true);
 
-        checkOrdinals(xmlCube);
+        //checkOrdinals(xmlCube);
         if (Util.deprecated(false, false)) {
             cube.setAggGroup(
                 ExplicitRules.Group.make(
